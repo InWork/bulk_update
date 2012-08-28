@@ -11,6 +11,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency "activerecord"
   gem.add_development_dependency "rspec"
   gem.add_development_dependency "sqlite3"
+  gem.add_development_dependency "pry"
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }

@@ -1,5 +1,5 @@
 require "bulk_update/version"
+require "bulk_update/active_record_inflections"
+require "active_record"
 
-module BulkUpdate
-  # Your code goes here...
-end
+ActiveRecord::Base.send(:extend, BulkUpdate::ActiveRecordInflections)

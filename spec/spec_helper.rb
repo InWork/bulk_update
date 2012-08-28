@@ -1,9 +1,9 @@
 require 'rubygems'
 require 'bundler/setup'
-
-require 'bulk_update'
 require 'support/active_record'
 require 'support/my_hash'
+
+require 'bulk_update'
 
 
 RSpec.configure do |config|
