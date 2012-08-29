@@ -22,6 +22,7 @@ Or install it yourself as:
 ### Bulk insert
 
 Bulk insert inserts a large amount of data into as SQL-Bulk-Inserts. Example:
+
     columns = [:name, :value]
     values  = [['name1', 'value1'], ['name2', 'value2'], ['name3', 'value3']]
     Model.bulk_insert columns, values
