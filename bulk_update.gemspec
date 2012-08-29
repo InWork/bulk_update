@@ -4,8 +4,8 @@ require File.expand_path('../lib/bulk_update/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Philip Kurmann"]
   gem.email         = ["philip@kman.ch"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{Updates a large amount of Records in a highliy efficient way}
+  gem.summary       = %q{Enhances Active Record with a method for bulk inserts and a method for bulk updates. Both merthods are used for inserting or updating large amount of Records.}
   gem.homepage      = ""
 
   gem.add_dependency "activerecord"
