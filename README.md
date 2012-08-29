@@ -22,19 +22,21 @@ Or install it yourself as:
 ### Bulk insert
 
 Bulk insert inserts a large amount of data into as SQL-Bulk-Inserts. Example:
-  columns = [:name, :value]
-  values  = [['name1', 'value1'], ['name2', 'value2'], ['name3', 'value3']]
-  Model.bulk_insert columns, values
+    columns = [:name, :value]
+    values  = [['name1', 'value1'], ['name2', 'value2'], ['name3', 'value3']]
+    Model.bulk_insert columns, values
 
 ### Bulk update
 
 Bulk update updates a large amount of data. Update means, it creates new records, updates existing records which have changed and deletes old records. This is all done with ActiveRecord which means, all callbacks are executed.
 You have to provide a columns as a key, which is used determine which records are new, have changed or has to be deleted. Only the values provided in the array 'values' are compared and will be updated. Example:
 
-  columns = [:name, :value]
-  values  = [['name1', 'value1'], ['name2', 'value2'], ['name3', 'value3']]
+    columns = [:name, :value]
+    values  = [['name1', 'value1'], ['name2', 'value2'], ['name3', 'value3']]
+    Model.bulk_insert columns, values
 
 You have now the following entries in your database:
+<pre>
   +----+----------------+
   | id | name  | value  |
   +----+----------------+
@@ -42,12 +44,15 @@ You have now the following entries in your database:
   |  1 | name2 | value2 |
   |  2 | name3 | value3 |
   +----+----------------+
+</pre>
 
-  Model.bulk_insert columns, values
-  values  = [['name1', 'value1.1'], ['name2', 'value2'], ['name4', 'value4.1']]
-  Model.bulk_update columns, values, key: 'name'
+If you now do a bulk update:
+
+    values  = [['name1', 'value1.1'], ['name2', 'value2'], ['name4', 'value4.1']]
+    Model.bulk_update columns, values, key: 'name'
 
 You have now the following entries in your database:
+<pre>
   +----+------------------+
   | id | name  | value    |
   +----+------------------+
@@ -55,6 +60,7 @@ You have now the following entries in your database:
   |  1 | name2 | value2   |
   |  3 | name4 | value4.1 |
   +----+------------------+
+</pre>
 
 
 ## Contributing
