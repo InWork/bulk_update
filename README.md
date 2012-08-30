@@ -68,7 +68,7 @@ You have now the following entries in your database:
 
 ### Bulk insert
 
-Bulk insert uses the bulk insert feature of SQL ('INSERT INTO tbl_name (col1,col2,col3) VALUES(v1,v2,v3),(v4,v5,v6),(v7,v8,v9);')
+Bulk insert uses the bulk insert feature of SQL (`INSERT INTO tbl_name (col1,col2,col3) VALUES(v1,v2,v3),(v4,v5,v6),(v7,v8,v9);`)
 
 You can specify the max records per insert with the argument `:max_records_per_insert` (default is 100). After these amount of records, the SQL is sent to the database.
 
