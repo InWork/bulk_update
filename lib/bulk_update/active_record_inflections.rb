@@ -8,6 +8,8 @@ module BulkUpdate
         when 'sqlite3'
           ActiveRecord::Base.connection.execute "CREATE TABLE `#{args[:to]}` AS SELECT * FROM `#{table_name}` LIMIT 1"
           ActiveRecord::Base.connection.execute "DELETE FROM `#{args[:to]}`"
+        when 'postgresql'
+          ActiveRecord::Base.connection.execute "CREATE TABLE \"#{args[:to]}\" (LIKE \"#{table_name}\" INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING INDEXES);"
         else
           ActiveRecord::Base.connection.execute "CREATE TABLE `#{args[:to]}` LIKE `#{table_name}`"
         end
@@ -53,8 +55,14 @@ module BulkUpdate
 
       if table_name
         # Create header for insert with all column names
-        columns = columns.clone.map!{ |c| "`#{c}`" }
-        insert_head = "INSERT INTO `#{table}` (#{columns.join(', ')})"
+        case ActiveRecord::Base.connection_config[:adapter]
+        when 'postgresql'
+          columns = columns.map! { |c| "\"#{c}\"" }
+          insert_head = "INSERT INTO \"#{table}\" (#{columns.join(', ')})"
+        else
+          columns = columns.map!{ |c| "`#{c}`" }
+          insert_head = "INSERT INTO `#{table}` (#{columns.join(', ')})"
+        end
 
         # Create inserts
         inserts = []
@@ -143,6 +151,7 @@ module BulkUpdate
       new_records = []
       keys_to_log = []
       results.each do |attributes|
+        attributes = attributes2array(attributes)
         new_records << result2hash(attributes, exclude)
         keys_to_log << new_records.last[key.to_sym]
       end
@@ -188,15 +197,17 @@ module BulkUpdate
 
       # Generate and execute SQL-Statement
       condition = "#{conditions.join(' AND ')} AND (#{conditions2.join(' OR ')})"
-      sql = "SELECT #{model.table_name}.id, #{compare_table}.* FROM #{model.table_name}, #{compare_table} WHERE #{condition}"
+      compare_columns = attribute_names.select { |e| e != 'id' }.map { |e| "#{compare_table}.#{e}" }.join(', ')
+      sql = "SELECT #{model.table_name}.id, #{compare_columns} FROM #{model.table_name}, #{compare_table} WHERE #{condition}"
       results = ActiveRecord::Base.connection.execute sql
 
       # Generate Hash with id as the key and values as a Hashes of all changed records
       results_hash = {}
       keys_to_log = []
       results.each do |attributes|
+        attributes = attributes2array(attributes)
         id = attributes[0]
-        results_hash[id] = result2hash attributes, exclude, 1
+        results_hash[id] = result2hash attributes, exclude
         keys_to_log << (args[:debug] ? model.find(id).send(key) : id)
       end
       args[:logger].info "Change Records for Model #{model.to_s}: #{keys_to_log.join(', ')}" unless keys_to_log.blank? || args[:logger].blank?
@@ -237,6 +248,7 @@ module BulkUpdate
       deleted_records = []
       keys_to_log = []
       results.each do |attributes|
+        attributes = attributes2array(attributes)
         deleted_records << attributes[0]
         keys_to_log << attributes[1]
       end
@@ -248,13 +260,18 @@ module BulkUpdate
   private
 
 
-    def result2hash attributes, exclude, attribute_nr = 0
+    def result2hash(attributes, exclude, attribute_nr = 0)
       hash = {}
       attribute_names.each do |an|
         hash[an.to_sym] = attributes[attribute_nr] unless exclude.include?(an)
         attribute_nr += 1
       end
       hash
+    end
+
+
+    def attributes2array(attributes)
+      ActiveRecord::Base.connection_config[:adapter] == 'postgresql' ? attributes.map{ |e| e.last } : attributes
     end
 
   end
