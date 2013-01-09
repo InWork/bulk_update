@@ -1,7 +1,7 @@
 # BulkUpdate
 
 Updates a large amount of Records in a highliy efficient way.
-Enhances Active Record with a method for bulk inserts and a method for bulk updates. Both merthods are used for inserting or updating large amount of Records.
+Enhances Active Record with a method for bulk inserts and a method for bulk updates. Both methods are used for inserting or updating large amount of Records.
 
 ## Installation
 
