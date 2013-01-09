@@ -31,7 +31,7 @@ DB_SPEC = SQLITE3_SPEC
 
 puts "Testing ActiveRecord #{ActiveRecord::VERSION::STRING} #{DB_SPEC[:adapter]}-adapter"
 
-# drops and create need to be performed with a connection to the 'postgres' (system) database
+# Drop and create need to be performed with a connection to the system database
 if DB_SPEC[:adapter] == 'mysql2'
   ActiveRecord::Base.establish_connection(DB_SPEC.merge(database: nil))
 elsif DB_SPEC[:adapter] == 'postgresql'

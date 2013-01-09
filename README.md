@@ -85,3 +85,7 @@ All new, changed and deleted records are handled by ActiveRecord. This ensures, 
 3. Commit your changes (`git commit -am 'Added some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+## Copyright
+
+Copyright (c) 2012 - 2013 Philip Kurmann. See LICENSE for details.
