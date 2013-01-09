@@ -1,10 +1,53 @@
 require 'active_record'
 require 'active_record/version'
-puts "Testing ActiveRecord #{ActiveRecord::VERSION::STRING}"
 
-ActiveRecord::Base.establish_connection adapter: "sqlite3", database: ":memory:"
-ActiveRecord::Migrator.up "db/migrate"
+SQLITE3_SPEC = {
+  adapter:  'sqlite3',
+  database: ':memory:',
+  encoding: 'utf8'
+}
 
+MYSQL_SPEC = {
+  adapter:  'mysql2',
+  host:     'localhost',
+  database: 'bulk_update_test',
+  username: 'root',
+  password: '123456',
+  encoding: 'utf8'
+}
+
+PG_SPEC = {
+  adapter:  'postgresql',
+  host:     'localhost',
+  database: 'bulk_update_test',
+  username: 'pk',
+  password: '123456',
+  encoding: 'utf8'
+}
+
+DB_SPEC = SQLITE3_SPEC
+# DB_SPEC = MYSQL_SPEC
+# DB_SPEC = PG_SPEC
+
+puts "Testing ActiveRecord #{ActiveRecord::VERSION::STRING} #{DB_SPEC[:adapter]}-adapter"
+
+# drops and create need to be performed with a connection to the 'postgres' (system) database
+if DB_SPEC[:adapter] == 'mysql2'
+  ActiveRecord::Base.establish_connection(DB_SPEC.merge(database: nil))
+elsif DB_SPEC[:adapter] == 'postgresql'
+  ActiveRecord::Base.establish_connection(DB_SPEC.merge(database: 'postgres', schema_search_path: 'public'))
+end
+
+# Drop old DB and create a new one
+if DB_SPEC[:adapter] == 'mysql2' || DB_SPEC[:adapter] == 'postgresql'
+  ActiveRecord::Base.connection.drop_database DB_SPEC[:database] rescue nil
+  ActiveRecord::Base.connection.create_database(DB_SPEC[:database])
+end
+
+# Establish connection
+ActiveRecord::Base.establish_connection(DB_SPEC)
+# Migrate DB
+ActiveRecord::Migrator.up 'db/migrate'
 load 'spec/support/schema.rb'
 
 
