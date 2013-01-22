@@ -86,6 +86,9 @@ All new, changed and deleted records are handled by ActiveRecord. This ensures, 
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
 
-## Copyright
 
-Copyright (c) 2012 - 2013 Philip Kurmann. See LICENSE for details.
+## License
+This project is licenced under the MIT license.
+
+## Author
+Philip Kurmann (philip (at) kman.ch)
