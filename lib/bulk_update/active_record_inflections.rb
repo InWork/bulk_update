@@ -196,7 +196,8 @@ module BulkUpdate
       end
 
       # Generate and execute SQL-Statement
-      condition = "#{conditions.join(' AND ')} AND (#{conditions2.join(' OR ')})"
+      condition = conditions.join(' AND ')
+      condition += " AND (#{conditions2.join(' OR ')})" unless conditions2.blank?
       compare_columns = attribute_names.select { |e| e != 'id' }.map { |e| "#{compare_table}.#{e}" }.join(', ')
       sql = "SELECT #{model.table_name}.id, #{compare_columns} FROM #{model.table_name}, #{compare_table} WHERE #{condition}"
       results = ActiveRecord::Base.connection.execute sql
@@ -238,8 +239,8 @@ module BulkUpdate
       end
 
       # Generate and execute SQL-Statement
-      condition = conditions.join(' AND ') unless conditions.blank?
-      condition2 = conditions2.join(' AND ') unless conditions2.blank?
+      condition = conditions.join(' AND ')
+      condition2 = conditions2.join(' AND ')
       sql = "SELECT id, #{key} FROM #{model.table_name} WHERE #{condition} #{'AND' unless conditions.blank?} #{model.table_name}.#{key} NOT IN " +
             "(SELECT #{key} FROM #{compare_table} #{'WHERE' unless conditions2.blank?} #{condition2})"
       results = ActiveRecord::Base.connection.execute sql
