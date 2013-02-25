@@ -41,7 +41,7 @@ module BulkUpdate
       columns = columns.clone
 
       # Add timestamp
-      timestamp = Time.now
+      timestamp = Time.now.to_s(:db)
       add_timestamp = false
       add_updated_at = false
       unless columns.map(&:to_sym).include?(:created_at)
