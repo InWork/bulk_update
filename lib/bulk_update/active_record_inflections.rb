@@ -191,7 +191,7 @@ module BulkUpdate
           when /mysql?/
             conditions2 << "NOT #{model.table_name}.#{an} <=> #{compare_table}.#{an}"
           when 'postgresql'
-            conditions2 << "#{model.table_name}.#{an} IS DISTINCT #{compare_table}.#{an}"
+            conditions2 << "#{model.table_name}.#{an} IS DISTINCT FROM #{compare_table}.#{an}"
           else
             conditions2 << "(#{model.table_name}.#{an} IS NOT NULL AND #{compare_table}.#{an} IS NOT NULL AND #{model.table_name}.#{an} != #{compare_table}.#{an}) OR (#{model.table_name}.#{an} IS NOT NULL AND #{compare_table}.#{an} IS NULL) OR (#{model.table_name}.#{an} IS NULL AND #{compare_table}.#{an} IS NOT NULL)"
           end
