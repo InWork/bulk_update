@@ -187,10 +187,13 @@ module BulkUpdate
       conditions << "#{args[:condition].gsub('--tt--', model.table_name)} AND #{args[:condition].gsub('--tt--', compare_table)}" if args[:condition]
       model.attribute_names.each do |an|
         unless exclude.include?(an)
-          if ActiveRecord::Base.connection_config[:adapter] =~ /mysql?/
-            conditions2 << "NOT #{model.table_name}.#{an} <=> #{compare_table}.#{an}" unless exclude.include?(an)
+          case ActiveRecord::Base.connection_config[:adapter]
+          when /mysql?/
+            conditions2 << "NOT #{model.table_name}.#{an} <=> #{compare_table}.#{an}"
+          when 'postgresql'
+            conditions2 << "#{model.table_name}.#{an} IS DISTINCT #{compare_table}.#{an}"
           else
-            conditions2 << "NOT (#{model.table_name}.#{an} = #{compare_table}.#{an} OR (#{model.table_name}.#{an} IS NULL AND #{compare_table}.#{an} IS NULL))"
+            conditions2 << "(#{model.table_name}.#{an} IS NOT NULL AND #{compare_table}.#{an} IS NOT NULL AND #{model.table_name}.#{an} != #{compare_table}.#{an}) OR (#{model.table_name}.#{an} IS NOT NULL AND #{compare_table}.#{an} IS NULL) OR (#{model.table_name}.#{an} IS NULL AND #{compare_table}.#{an} IS NOT NULL)"
           end
         end
       end
