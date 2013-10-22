@@ -1,5 +1,5 @@
 # BulkUpdate
-[![Code Climate](https://codeclimate.com/github/InWork/queue_dispatcher.png)](https://codeclimate.com/github/InWork/queue_dispatcher)
+[![Code Climate](https://codeclimate.com/github/InWork/bulk_update.png)](https://codeclimate.com/github/InWork/bulk_update)
 
 Updates a large amount of Records in a highliy efficient way.
 Enhances Active Record with a method for bulk inserts and a method for bulk updates. Both methods are used for inserting or updating large amount of Records.
