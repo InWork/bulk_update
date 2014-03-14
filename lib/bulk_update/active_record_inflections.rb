@@ -60,14 +60,7 @@ module BulkUpdate
 
       if table_name
         # Create header for insert with all column names
-        case ActiveRecord::Base.connection_config[:adapter]
-        when 'postgresql'
-          columns = columns.map! { |c| "\"#{c}\"" }
-          insert_head = "INSERT INTO \"#{table}\" (#{columns.join(', ')})"
-        else
-          columns = columns.map!{ |c| "`#{c}`" }
-          insert_head = "INSERT INTO `#{table}` (#{columns.join(', ')})"
-        end
+        insert_head = get_insert_header_based_on_db(columns, table)
 
         # Create inserts
         inserts = []
@@ -319,6 +312,19 @@ module BulkUpdate
 
     def attributes2array(attributes)
       ActiveRecord::Base.connection_config[:adapter] == 'postgresql' ? attributes.map{ |e| e.last } : attributes
+    end
+
+    def get_insert_header_based_on_db columns, table
+      case ActiveRecord::Base.connection_config[:adapter]
+      when 'postgresql'
+        columns = columns.map! { |c| "\"#{c}\"" }
+        insert_head = "INSERT INTO \"#{table}\" (#{columns.join(', ')})"
+      else
+        columns = columns.map!{ |c| "`#{c}`" }
+        insert_head = "INSERT INTO `#{table}` (#{columns.join(', ')})"
+      end
+
+      insert_head
     end
 
   end
