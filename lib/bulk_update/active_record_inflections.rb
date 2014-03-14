@@ -38,10 +38,15 @@ module BulkUpdate
       # Limit inserts
       max_records_per_insert = args[:max_records_per_insert] || 100
       table = args[:into] || table_name
+      index_of_date_time_columns = get_index_of_date_time_columns(columns)
       columns = columns.clone
 
+      # Handel time zone
+      db_utc = args.has_key?(:db_utc) ? args[:db_utc] : true
+
       # Add timestamp
-      timestamp = Time.now.to_s(:db)
+      timestamp = time_for_db(db_utc, Time.zone.now)
+
       add_timestamp = false
       add_updated_at = false
       unless columns.map(&:to_sym).include?(:created_at)
@@ -66,7 +71,13 @@ module BulkUpdate
 
         # Create inserts
         inserts = []
+
         values.each do |values_per_record|
+
+          if index_of_date_time_columns.present?
+            values_per_record = get_datetime_values(db_utc, index_of_date_time_columns, values_per_record)
+          end
+
           values_per_record = values_per_record.clone
           values_per_record << timestamp if add_created_at
           values_per_record << timestamp if add_updated_at
@@ -262,6 +273,38 @@ module BulkUpdate
 
 
   private
+
+    def get_datetime_values(db_utc, index_of_date_time_columns, values_per_record)
+      index_of_date_time_columns.each do |index|
+        if values_per_record[index].is_a?(String)
+          time = Time.zone.parse(values_per_record[index])
+        else
+          time = values_per_record[index]
+        end
+
+        values_per_record[index] = time_for_db(db_utc, time)
+      end
+
+      values_per_record
+    end
+
+
+    def time_for_db db_utc, time
+      if db_utc
+        time.in_time_zone("UTC").to_s(:db)
+      else
+        time.to_s(:db)
+      end
+    end
+
+
+    def get_index_of_date_time_columns columns
+      datetime_attr_index = []
+      Hash[columns.map.with_index.to_a].each do |att,position|
+        datetime_attr_index << position if self.columns_hash[att.to_s].type == :datetime
+      end
+      datetime_attr_index
+    end
 
 
     def result2hash(attributes, exclude, attribute_nr = 0)

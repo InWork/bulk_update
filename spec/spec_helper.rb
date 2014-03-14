@@ -2,6 +2,7 @@ require 'rubygems'
 require 'bundler/setup'
 require 'support/active_record'
 require 'support/my_hash'
+require 'support/my_date_time_hash'
 
 require 'bulk_update'
 
