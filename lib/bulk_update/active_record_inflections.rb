@@ -2,7 +2,7 @@ module BulkUpdate
   module ActiveRecordInflections
     #
     # Clone the database structure of a table
-    def clone_table args = {}
+    def clone_table(args = {})
       if args[:to]
         case ActiveRecord::Base.connection_config[:adapter]
         when 'sqlite3'
@@ -17,7 +17,7 @@ module BulkUpdate
     end
 
 
-    def insert_str element
+    def insert_str(element)
       if element.class == Fixnum || element.class == Float
         element
       elsif element.class == NilClass
@@ -34,15 +34,15 @@ module BulkUpdate
 
     #
     # Bulk insert records
-    def bulk_insert columns, values, args = {}
+    def bulk_insert(columns, values, args = {})
       # Limit inserts
       max_records_per_insert = args[:max_records_per_insert] || 100
-      table = args[:into] || table_name
-      columns = columns.clone
+      table                  = args[:into] || table_name
+      columns                = columns.clone
 
       # Add timestamp
-      timestamp = Time.now.to_s(:db)
-      add_timestamp = false
+      timestamp      = Time.now.to_s(:db)
+      add_timestamp  = false
       add_updated_at = false
       unless columns.map(&:to_sym).include?(:created_at)
         columns << :created_at
@@ -84,14 +84,14 @@ module BulkUpdate
     #
     # Create, update and delete Records according to a set of new values through ActiveRecord but optimized for performance by
     # finding all diferences by SQL.
-    def bulk_update columns, values, args = {}
-      temp_table = "#{table_name}_temp_table_#{$$}"
-      key = args[:key] || args[:keys] || 'id'
-      condition = args[:condition]
+    def bulk_update(columns, values, args = {})
+      temp_table     = "#{table_name}_temp_table_#{$$}"
+      key            = args[:key] || args[:keys] || 'id'
+      condition      = args[:condition]
       exclude_fields = args[:exclude_fields]
-      insert = args[:insert].nil? ? true : args[:insert]
-      update = args[:update].nil? ? true : args[:update]
-      remove = args[:remove].nil? ? true : args[:remove]
+      insert         = args[:insert].nil? ? true : args[:insert]
+      update         = args[:update].nil? ? true : args[:update]
+      remove         = args[:remove].nil? ? true : args[:remove]
 
       # Clone temp-table and load it
       clone_table to: temp_table
@@ -115,23 +115,30 @@ module BulkUpdate
     #
     # Exclude List
     def default_exclude
-      ['id', 'version', 'created_at', 'updated_at']
+      @default_exclude ||= ['id', 'created_at', 'updated_at']
+    end
+
+
+    #
+    # Exclude List
+    def default_exclude=(excludes)
+      @default_exclude = excludes
     end
 
 
     #
     # Compare Table of args[:model] with its temporary table args[:compare_with] and return all new records as a Array of Hashes
-    def get_new_records args = {}
-      model = args[:for] || self
-      compare_table = args[:compare_with]
-      keys = args[:on] || 'id'
-      exclude = args[:exclude_fields] || []
-      exclude |= default_exclude
+    def get_new_records(args = {})
+      model         =  args[:for] || self
+      compare_table =  args[:compare_with]
+      keys          =  args[:on] || 'id'
+      exclude       =  args[:exclude_fields] || []
+      exclude       |= default_exclude - %w(created_at updated_at)
 
       # Generate conditions for query and sub-query
-      conditions = []
-      conditions2 = []
-      conditions << "#{args[:condition].gsub('--tt--', compare_table)}" if args[:condition]
+      conditions  =  []
+      conditions2 =  []
+      conditions  << "#{args[:condition].gsub('--tt--', compare_table)}" if args[:condition]
       conditions2 << "#{args[:condition].gsub('--tt--', model.table_name)}" if args[:condition]
       if keys.class == String || keys.class == Symbol
         key = keys.to_s
@@ -141,7 +148,7 @@ module BulkUpdate
       end
 
       # Generate and execute SQL-Statement
-      condition = conditions.join(' AND ')
+      condition  = conditions.join(' AND ')
       condition2 = conditions2.join(' AND ')
       sql = "SELECT * FROM #{compare_table} WHERE #{condition} #{'AND' unless conditions.blank?} #{compare_table}.#{key} NOT IN " +
             "(SELECT #{key} FROM #{model.table_name} #{'WHERE' unless conditions2.blank?} #{condition2})"
@@ -163,26 +170,26 @@ module BulkUpdate
     #
     # Compare Table of args[:model] with its temporary table args[:compare_with] and return all updated records as a Hash of Hashes whose
     # key is the ID of the changed record
-    def get_updated_records args = {}
-      model = args[:for] || self
-      compare_table = args[:compare_with]
-      keys = args[:on] || 'id'
-      exclude = args[:exclude_fields] || []
-      exclude |= default_exclude
-      exclude_virtual = args[:exclude_virtual].nil? ? false : args[:exclude_virtual]
+    def get_updated_records(args = {})
+      model           =  args[:for] || self
+      compare_table   =  args[:compare_with]
+      keys            =  args[:on] || 'id'
+      exclude         =  args[:exclude_fields] || []
+      exclude         |= default_exclude
+      exclude_virtual =  args[:exclude_virtual].nil? ? false : args[:exclude_virtual]
 
       # Generate conditions for query and sub-query
-      conditions = []
+      conditions  = []
       conditions2 = []
       conditions << "NOT #{model.table_name}.virtual" if exclude_virtual
       if keys.class == String || keys.class == Symbol
-        key = keys.to_s
+        key        =  keys.to_s
         conditions << "#{model.table_name}.#{key} = #{compare_table}.#{key}"
-        exclude |= [keys.to_s]
+        exclude    |= [keys.to_s]
       else
-        key = keys[0].to_s
+        key        =  keys[0].to_s
         conditions |= keys.map{|k| "#{model.table_name}.#{k.to_s} = #{compare_table}.#{k.to_s}" }
-        exclude |= keys.map(&:to_s)
+        exclude    |= keys.map(&:to_s)
       end
       conditions << "#{args[:condition].gsub('--tt--', model.table_name)} AND #{args[:condition].gsub('--tt--', compare_table)}" if args[:condition]
       model.attribute_names.each do |an|
@@ -199,20 +206,20 @@ module BulkUpdate
       end
 
       # Generate and execute SQL-Statement
-      condition = conditions.join(' AND ')
-      condition += " AND (#{conditions2.join(' OR ')})" unless conditions2.blank?
-      compare_columns = attribute_names.select { |e| e != 'id' }.map { |e| "#{compare_table}.#{e}" }.join(', ')
-      sql = "SELECT #{model.table_name}.id, #{compare_columns} FROM #{model.table_name}, #{compare_table} WHERE #{condition}"
-      results = ActiveRecord::Base.connection.execute sql
+      condition       =  conditions.join(' AND ')
+      condition       += " AND (#{conditions2.join(' OR ')})" unless conditions2.blank?
+      compare_columns =  attribute_names.select { |e| e != 'id' }.map { |e| "#{compare_table}.#{e}" }.join(', ')
+      sql             =  "SELECT #{model.table_name}.id, #{compare_columns} FROM #{model.table_name}, #{compare_table} WHERE #{condition}"
+      results         =  ActiveRecord::Base.connection.execute sql
 
       # Generate Hash with id as the key and values as a Hashes of all changed records
       results_hash = {}
-      keys_to_log = []
+      keys_to_log  = []
       results.each do |attributes|
-        attributes = attributes2array(attributes)
-        id = attributes[0]
-        results_hash[id] = result2hash attributes, exclude
-        keys_to_log << (args[:debug] ? model.find(id).send(key) : id)
+        attributes       =  attributes2array(attributes)
+        id               =  attributes[0]
+        results_hash[id] =  result2hash attributes, exclude - %w(updated_at)
+        keys_to_log      << (args[:debug] ? model.find(id).send(key) : id)
       end
       args[:logger].info "Change Records for Model #{model.to_s}: #{keys_to_log.join(', ')}" unless keys_to_log.blank? || args[:logger].blank?
 
@@ -222,18 +229,18 @@ module BulkUpdate
 
     #
     # Compare Table of args[:model] with its temporary table args[:compare_with] and return all deleted records as a Array of IDs
-    def get_deleted_records args = {}
-      model = args[:for] || self
-      compare_table = args[:compare_with]
-      keys = args[:on] || 'id'
+    def get_deleted_records(args = {})
+      model           = args[:for] || self
+      compare_table   = args[:compare_with]
+      keys            = args[:on] || 'id'
       exclude_virtual = args[:exclude_virtual].nil? ? false : args[:exclude_virtual]
 
       # Generate conditions for query and sub-query
-      conditions = []
-      conditions2 = []
-      conditions << "NOT #{model.table_name}.virtual" if exclude_virtual
-      conditions << "#{args[:condition].gsub('--tt--', model.table_name)}" if args[:condition]
-      conditions2 << "#{args[:condition].gsub('--tt--', compare_table)}" if args[:condition]
+      conditions    =  []
+      conditions2   =  []
+      conditions    << "NOT #{model.table_name}.virtual" if exclude_virtual
+      conditions    << "#{args[:condition].gsub('--tt--', model.table_name)}" if args[:condition]
+      conditions2   << "#{args[:condition].gsub('--tt--', compare_table)}" if args[:condition]
       if keys.class == String || keys.class == Symbol
         key = keys.to_s
       else
@@ -242,19 +249,19 @@ module BulkUpdate
       end
 
       # Generate and execute SQL-Statement
-      condition = conditions.join(' AND ')
+      condition  = conditions.join(' AND ')
       condition2 = conditions2.join(' AND ')
-      sql = "SELECT id, #{key} FROM #{model.table_name} WHERE #{condition} #{'AND' unless conditions.blank?} #{model.table_name}.#{key} NOT IN " +
-            "(SELECT #{key} FROM #{compare_table} #{'WHERE' unless conditions2.blank?} #{condition2})"
-      results = ActiveRecord::Base.connection.execute sql
+      sql        = "SELECT id, #{key} FROM #{model.table_name} WHERE #{condition} #{'AND' unless conditions.blank?} #{model.table_name}.#{key} NOT IN " +
+                   "(SELECT #{key} FROM #{compare_table} #{'WHERE' unless conditions2.blank?} #{condition2})"
+      results    = ActiveRecord::Base.connection.execute sql
 
       # Generate Array with ids of all deleted records
       deleted_records = []
-      keys_to_log = []
+      keys_to_log     = []
       results.each do |attributes|
-        attributes = attributes2array(attributes)
+        attributes      =  attributes2array(attributes)
         deleted_records << attributes[0]
-        keys_to_log << attributes[1]
+        keys_to_log     << attributes[1]
       end
       args[:logger].info "Deleting Records from Model #{model.to_s}: #{keys_to_log.join(', ')}" unless keys_to_log.blank? || args[:logger].blank?
       deleted_records
@@ -267,8 +274,8 @@ module BulkUpdate
     def result2hash(attributes, exclude, attribute_nr = 0)
       hash = {}
       attribute_names.each do |an|
-        hash[an.to_sym] = attributes[attribute_nr] unless exclude.include?(an)
-        attribute_nr += 1
+        hash[an.to_sym] =  attributes[attribute_nr] unless exclude.include?(an)
+        attribute_nr    += 1
       end
       hash
     end
